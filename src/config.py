@@ -4,7 +4,7 @@ import os
 
 
 class Config:
-    DATA_PREFIX = "data"
+    DATA_PREFIX = "../data"
     EXPERIMENT_PREFIX = "experiments"
 
 
@@ -123,8 +123,8 @@ def read_arguments_evaluation():
 def read_arguments_manual_inference():
     parser = argparse.ArgumentParser(description="Run manual inference with following arguments")
     # manual_inference
-    parser.add_argument('--model_to_load',default = "saved_model/best_model.pt",type=str)
-    parser.add_argument('--database', default='dealPlatform', type=str)
+    parser.add_argument('--model_to_load',default = "../saved_model/trained_model.pt",type=str)
+    parser.add_argument('--database', default='body_builder', type=str)
 
     # general configuration
     parser.add_argument('--seed', default=90, type=int)

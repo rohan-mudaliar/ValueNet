@@ -2,7 +2,7 @@ import os
 import pickle
 import sqlite3
 from pprint import pprint
-
+from utils import setup_device, set_seed_everywhere
 import torch
 import json
 from config import read_arguments_manual_inference
@@ -25,7 +25,7 @@ from termcolor import colored
 
 def _inference_semql(data_row, schemas, model):
     example = build_example(data_row, schemas)
-
+    print()
     with torch.no_grad():
         results_all = model.parse(example, beam_size=1)
     results = results_all[0]
@@ -67,49 +67,12 @@ def _semql_to_sql(prediction, schemas):
 def _execute_query(sql, db):
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
-
     cursor.execute(sql)
     result = cursor.fetchall()
 
     conn.close()
 
     return result
-
-
-def _print_banner():
-    print(colored('''
-                                                                                                                                                                   
-                                                                                                                                                           
-VVVVVVVV           VVVVVVVV               lllllll                                       NNNNNNNN        NNNNNNNN                             tttt          
-V::::::V           V::::::V               l:::::l                                       N:::::::N       N::::::N                          ttt:::t          
-V::::::V           V::::::V               l:::::l                                       N::::::::N      N::::::N                          t:::::t          
-V::::::V           V::::::V               l:::::l                                       N:::::::::N     N::::::N                          t:::::t          
- V:::::V           V:::::Vaaaaaaaaaaaaa    l::::l uuuuuu    uuuuuu      eeeeeeeeeeee    N::::::::::N    N::::::N    eeeeeeeeeeee    ttttttt:::::ttttttt    
-  V:::::V         V:::::V a::::::::::::a   l::::l u::::u    u::::u    ee::::::::::::ee  N:::::::::::N   N::::::N  ee::::::::::::ee  t:::::::::::::::::t    
-   V:::::V       V:::::V  aaaaaaaaa:::::a  l::::l u::::u    u::::u   e::::::eeeee:::::eeN:::::::N::::N  N::::::N e::::::eeeee:::::eet:::::::::::::::::t    
-    V:::::V     V:::::V            a::::a  l::::l u::::u    u::::u  e::::::e     e:::::eN::::::N N::::N N::::::Ne::::::e     e:::::etttttt:::::::tttttt    
-     V:::::V   V:::::V      aaaaaaa:::::a  l::::l u::::u    u::::u  e:::::::eeeee::::::eN::::::N  N::::N:::::::Ne:::::::eeeee::::::e      t:::::t          
-      V:::::V V:::::V     aa::::::::::::a  l::::l u::::u    u::::u  e:::::::::::::::::e N::::::N   N:::::::::::Ne:::::::::::::::::e       t:::::t          
-       V:::::V:::::V     a::::aaaa::::::a  l::::l u::::u    u::::u  e::::::eeeeeeeeeee  N::::::N    N::::::::::Ne::::::eeeeeeeeeee        t:::::t          
-        V:::::::::V     a::::a    a:::::a  l::::l u:::::uuuu:::::u  e:::::::e           N::::::N     N:::::::::Ne:::::::e                 t:::::t    tttttt
-         V:::::::V      a::::a    a:::::a l::::::lu:::::::::::::::uue::::::::e          N::::::N      N::::::::Ne::::::::e                t::::::tttt:::::t
-          V:::::V       a:::::aaaa::::::a l::::::l u:::::::::::::::u e::::::::eeeeeeee  N::::::N       N:::::::N e::::::::eeeeeeee        tt::::::::::::::t
-           V:::V         a::::::::::aa:::al::::::l  uu::::::::uu:::u  ee:::::::::::::e  N::::::N        N::::::N  ee:::::::::::::e          tt:::::::::::tt
-            VVV           aaaaaaaaaa  aaaallllllll    uuuuuuuu  uuuu    eeeeeeeeeeeeee  NNNNNNNN         NNNNNNN    eeeeeeeeeeeeee            ttttttttttt  
-                                                                                                                                                           
-                                                                                                                                                           
-                                                                                                                                                           
-                                                                                                                                                           
-                                                                                                                                                           
-                                                                                                                                                           
-                                                                                                                                                                                                                                                                                                                                                                                                        
-        ''', 'blue'))
-
-
-def _remove_spaces(sentence):
-    s = sentence.strip().split()
-    s = " ".join(s)
-    return s
 
 def _find_nums(sentence):
     nums = []
@@ -118,8 +81,59 @@ def _find_nums(sentence):
             nums.append(word)
     return nums
 
+def _remove_spaces(sentence):
+    s = sentence.strip().split()
+    s = " ".join(s)
+    return s
 
-if __name__ == '__main__':
+def predictoutput(related_to_concept, is_a_concept,question,schemas_raw,schemas_dict,args,tokenizer,model):
+    dict = {}
+    # _print_banner()
+    nums = _find_nums(question)
+    dict['question'] = question
+    row = {
+        'question': question,
+        'query': 'DUMMY',
+        'db_id': args.database,
+        'question_toks': _tokenize_question(tokenizer, question)
+    }
+    print(colored(
+        f"question has been tokenized to : {row['question_toks']}", 'cyan', attrs=['bold']))
+    data, table = merge_data_with_schema(schemas_raw, [row])
+    pre_processed_data = process_datas(
+        data, related_to_concept, is_a_concept)
+    pre_processed_with_values = _pre_process_values(
+        pre_processed_data[0])
+    for num in nums:
+        if num not in row['values']:
+            row['values'].append(num)
+    print(
+        f"we found the following potential values in the question: {row['values']}")
+    prediction, example = _inference_semql(
+        pre_processed_with_values, schemas_dict, model)
+    print(
+        f"Results from schema linking (question token types): {example.src_sent}")
+    print(
+        f"Results from schema linking (column types): {example.col_hot_type}")
+    print(colored(
+        f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
+    print()
+    #dict['semQL'] = prediction['model_result']
+    sql = _semql_to_sql(prediction, schemas_dict)
+    print(
+        colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
+    print()
+    dict['sql'] = sql
+    print("printing db: ", args.database_path, sql)
+    result = _execute_query(sql, args.database_path)
+    dict['result'] = result
+    print(f"Executed on the database '{args.database}'. Results: ")
+    for row in result:
+        print(colored(row, 'green'))
+    return dict
+
+def predict(question):
+    question = _remove_spaces(question)
     args = read_arguments_manual_inference()
     device, n_gpu = setup_device()
     set_seed_everywhere(args.seed, n_gpu)
@@ -131,6 +145,7 @@ if __name__ == '__main__':
     print(args.model_to_load)
     print(args.database)
     # load the pre-trained parameters
+    print(torch.device('cpu'))
     model.load_state_dict(torch.load(args.
                                      model_to_load, map_location=torch.device('cpu')))
     model.eval()
@@ -144,68 +159,9 @@ if __name__ == '__main__':
 
     with open(os.path.join(args.conceptNet, 'english_IsA.pkl'), 'rb') as f:
         is_a_concept = pickle.load(f)
-    log = []
-    while True:
-        dict = {}
-       # _print_banner()
-        question = input(colored(
-            f"You are using the database '{args.database}'. Type your question:", 'green', attrs=['bold']))
-        question = _remove_spaces(question)
-        nums = _find_nums(question)
-        dict['question'] = question
-        if(question == '`'):
-            break
-        row = {
-            'question': question,
-            'query': 'DUMMY',
-            'db_id': args.database,
-            'question_toks': _tokenize_question(tokenizer, question)
-        }
+    dict = predictoutput(related_to_concept, is_a_concept,question,schemas_raw,schemas_dict,args,tokenizer,model)
+    return dict
 
-        print(colored(
-            f"question has been tokenized to : { row['question_toks'] }", 'cyan', attrs=['bold']))
-
-        data, table = merge_data_with_schema(schemas_raw, [row])
-
-        pre_processed_data = process_datas(
-            data, related_to_concept, is_a_concept)
-
-        pre_processed_with_values = _pre_process_values(
-            pre_processed_data[0])
-
-        for num in nums:
-            if num not in row['values']:
-                row['values'].append(num)
-
-        print(
-            f"we found the following potential values in the question: {row['values']}")
-
-        prediction, example = _inference_semql(
-            pre_processed_with_values, schemas_dict, model)
-
-        print(
-            f"Results from schema linking (question token types): {example.src_sent}")
-        print(
-            f"Results from schema linking (column types): {example.col_hot_type}")
-
-        print(colored(
-            f"Predicted SemQL-Tree: {prediction['model_result']}", 'magenta', attrs=['bold']))
-        print()
-        dict['semQL'] = prediction['model_result']
-
-        sql = _semql_to_sql(prediction, schemas_dict)
-
-        print(
-            colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
-        print()
-        dict['sql'] = sql
-        result = _execute_query(sql, args.database_path)
-        dict['result'] = result
-        print(f"Executed on the database '{args.database}'. Results: ")
-        for row in result:
-            print(colored(row, 'green'))
-
-        log.append(dict)
 
     #     except Exception as e:
     #         print("Exception: " + str(e))
@@ -215,3 +171,4 @@ if __name__ == '__main__':
 
     # with open('log_' + str(args.database) + '.json', 'w') as f:
     #     json.dump(log, f, indent=4)
+

@@ -123,6 +123,7 @@ def load_static(args):
 
 def predict(question,args,grammar,model,nlp,tokenizer,related_to_concept,is_a_concept, schemas_raw, schemas_dict):
         question = _remove_spaces(question)
+        dict = {}
         nums = _find_nums(question)
         row = {
                 'question': question,
@@ -140,5 +141,12 @@ def predict(question,args,grammar,model,nlp,tokenizer,related_to_concept,is_a_co
         prediction, example = _inference_semql(
                 pre_processed_with_values, schemas_dict, model)
         sql = _semql_to_sql(prediction, schemas_dict)
-        return sql
+        dict['sql'] = sql
+        print("printing db: ", args.database_path, sql)
+        result = _execute_query(sql, args.database_path)
+        dict['result'] = result
+        print(f"Executed on the database '{args.database}'. Results: ")
+        for row in result:
+            print(colored(row, 'green'))
+        return dict
         

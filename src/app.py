@@ -1,12 +1,13 @@
 import argparse
 import json
-from updated_manual_inference import load_static,predict
+from updated_manual_inference import load_static
+from manual_inference import predict
 from flask import Flask,request
 app = Flask(__name__)
 ##routing
 class args:
-    model_to_load = '../saved_model/best_model.pt'
-    database='dealPlatform'
+    model_to_load = '../saved_model/trained_model.pt'
+    database='body_builder'
     seed=90
     data_set='spider'
     batch_size=1
@@ -33,7 +34,15 @@ args,grammar,model,nlp,tokenizer,related_to_concept,is_a_concept, schemas_raw, s
 @app.route('/testing',methods=['GET'])
 def testing():
     question = request.args['question']
-    result = predict(question,args,grammar,model,nlp,tokenizer,related_to_concept,is_a_concept, schemas_raw, schemas_dict)
+    result = predict(question)
     data = {}
     data['sql'] = result
     return data
+
+@app.route('/')
+def helloIndex():
+    return 'Hello World from DashBoard!'
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
