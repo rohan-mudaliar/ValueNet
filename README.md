@@ -34,3 +34,15 @@ Simply run `python src/main.py`. For all configuration see the `config.py` file.
 
 After each epoch the evaluation task is executed. Evaluation will use the Spider Evaluation script to execute SQL queries on the Spider databases.
 
+## RAKATHON POC:
+
+File to be added are below:
+
+BERT folder:
+
+* config.json(https://huggingface.co/bert-base-uncased/blob/main/config.json)
+* pytorch_model.bin(https://huggingface.co/bert-base-uncased/blob/main/pytorch_model.bin)
+* tf_model.h5(https://huggingface.co/bert-base-uncased/blob/main/tf_model.h5)
+* vocab.txt(https://huggingface.co/bert-base-uncased/blob/main/vocab.txt)
+
+Add model to saved model as per readme

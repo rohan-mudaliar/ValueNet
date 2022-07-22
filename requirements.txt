@@ -20,7 +20,7 @@ dataclasses==0.7 ; python_version < '3.7'
 deprecation==2.1.0
 docker-pycreds==0.4.0
 docutils==0.15.2
-feedparser==5.2.1
+# feedparser==5.2.1
 filelock==3.0.12
 future==0.18.2
 gitdb==4.0.4
@@ -46,7 +46,7 @@ markdown==3.2.1
 matplotlib==3.2.1
 more-itertools==8.2.0
 murmurhash==1.0.2
-mysqlclient==1.4.6
+# mysqlclient==1.4.6
 nltk==3.5
 numpy==1.18.4
 nvidia-ml-py3==7.352.0
@@ -106,7 +106,7 @@ urllib3==1.25.9 ; python_version != '3.4'
 wandb==0.8.35
 wasabi==0.6.0
 watchdog==0.10.2
-werkzeug==1.0.1
+werkzeug==2.0.0
 wheel==0.34.2 ; python_version >= '3'
 word2number==1.1
 zc.lockfile==2.0
