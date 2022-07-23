@@ -34,3 +34,13 @@ Simply run `python src/main.py`. For all configuration see the `config.py` file.
 
 After each epoch the evaluation task is executed. Evaluation will use the Spider Evaluation script to execute SQL queries on the Spider databases.
 
+### Local changes:
+
+Add Bert folder and download below files:(using to have our own local version of bert)
+
+* https://huggingface.co/bert-base-uncased/blob/main/config.json
+* https://huggingface.co/bert-base-uncased/blob/main/pytorch_model.bin
+* https://huggingface.co/bert-base-uncased/blob/main/tf_model.h5
+* https://huggingface.co/bert-base-uncased/blob/main/vocab.txt
+
+
