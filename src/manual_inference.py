@@ -25,7 +25,7 @@ from termcolor import colored
 
 def _inference_semql(data_row, schemas, model):
     example = build_example(data_row, schemas)
-
+    print()
     with torch.no_grad():
         results_all = model.parse(example, beam_size=1)
     results = results_all[0]
@@ -67,7 +67,6 @@ def _semql_to_sql(prediction, schemas):
 def _execute_query(sql, db):
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
-
     cursor.execute(sql)
     result = cursor.fetchall()
 
@@ -199,6 +198,7 @@ if __name__ == '__main__':
             colored(f"Transformed to SQL: {sql}", 'cyan', attrs=['bold']))
         print()
         dict['sql'] = sql
+        print("printing db: ", args.database_path, sql)
         result = _execute_query(sql, args.database_path)
         dict['result'] = result
         print(f"Executed on the database '{args.database}'. Results: ")

@@ -78,10 +78,10 @@ def _execute_query(sql, db):
 
     cursor.execute(sql)
     result = cursor.fetchall()
-
+    columns = [c[0] for c in cursor.description]
     conn.close()
 
-    return result
+    return result, columns
 
 
 def _remove_spaces(sentence):
@@ -119,9 +119,9 @@ def load_static(args):
     with open(os.path.join(args.conceptNet, 'english_IsA.pkl'), 'rb') as f:
         is_a_concept = pickle.load(f)
     
-    return args,grammar,model,nlp,tokenizer,related_to_concept,is_a_concept, schemas_raw, schemas_dict
+    return args,model,tokenizer,related_to_concept,is_a_concept, schemas_raw, schemas_dict
 
-def predict(question,args,grammar,model,nlp,tokenizer,related_to_concept,is_a_concept, schemas_raw, schemas_dict):
+def predict(question,args,model,tokenizer,related_to_concept,is_a_concept, schemas_raw, schemas_dict):
         question = _remove_spaces(question)
         nums = _find_nums(question)
         row = {
@@ -137,6 +137,7 @@ def predict(question,args,grammar,model,nlp,tokenizer,related_to_concept,is_a_co
         for num in nums:
             if num not in row['values']:
                 row['values'].append(num)
+
         prediction, example = _inference_semql(
                 pre_processed_with_values, schemas_dict, model)
         sql = _semql_to_sql(prediction, schemas_dict)

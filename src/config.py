@@ -4,7 +4,7 @@ import os
 
 
 class Config:
-    DATA_PREFIX = "data"
+    DATA_PREFIX = "../data"
     EXPERIMENT_PREFIX = "experiments"
 
 
