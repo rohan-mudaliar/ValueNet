@@ -27,9 +27,9 @@ class TransformerEncoder(nn.Module):
 
         config_class, model_class, tokenizer_class = (BertConfig, BertModel, BertTokenizer)
 
-        transformer_config = config_class.from_pretrained(pretrained_model)
-        self.tokenizer = tokenizer_class.from_pretrained(pretrained_model)
-        self.transformer_model = model_class.from_pretrained(pretrained_model, config=transformer_config)
+        transformer_config = config_class.from_pretrained("../bert")
+        self.tokenizer = tokenizer_class.from_pretrained("../bert")
+        self.transformer_model = model_class.from_pretrained("../bert")
 
         self.encoder_hidden_size = transformer_config.hidden_size
 
